@@ -11,11 +11,13 @@
 
 @implementation DWKwebview
 {
-    void(^alertHandler)(void);
+    void (^alertHandler)(void);
     void (^confirmHandler)(BOOL);
     void (^promptHandler)(NSString *);
     int dialogType;
     UITextField *txtName;
+    int counter;
+    NSMutableDictionary *callbackDict;
 }
 
 /*
@@ -26,25 +28,26 @@
  }
  */
 
--(instancetype)initWithFrame:(CGRect)frame configuration:(WKWebViewConfiguration *)configuration
+- (instancetype)initWithFrame:(CGRect)frame configuration:(WKWebViewConfiguration *)configuration
 {
     txtName=nil;
     dialogType=0;
     alertHandler=nil;
     confirmHandler=nil;
     promptHandler=nil;
-    //NSString * js=@"function setupWebViewJavascriptBridge(b){var a={call:function(d,c){return prompt('_dspiercall='+d,c)}};b(a)};";
-    
-    NSString * js=[@"_dswk='_dsbridge=';" stringByAppendingString: INIT_SCRIPT];
+    counter=0;
+    callbackDict=[NSMutableDictionary dictionary];
+    NSString * js = [NSString stringWithFormat:@"window[\"%@\"] = window[\"%@\"] || { wk: true };", BRIDGE_NAME, BRIDGE_NAME];
+    NSLog(@"initWithFrame %@", js);
     WKUserScript *script = [[WKUserScript alloc] initWithSource:js
                                                   injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                forMainFrameOnly:YES];
-    [configuration.userContentController addUserScript:script];
     WKUserScript *scriptDomReady = [[WKUserScript alloc] initWithSource:@";prompt('_dsinited');"
                                                           injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
-                                                       forMainFrameOnly:YES];
+                                                        forMainFrameOnly:YES];
     [configuration.userContentController addUserScript:scriptDomReady];
-    self = [super initWithFrame:frame configuration: configuration];
+    [configuration.userContentController addUserScript:script];
+    self = [super initWithFrame:frame configuration:configuration];
     if (self) {
         super.UIDelegate=self;
     }
@@ -54,17 +57,23 @@
     defaultText:(nullable NSString *)defaultText initiatedByFrame:(WKFrameInfo *)frame
 completionHandler:(void (^)(NSString * _Nullable result))completionHandler
 {
-    NSString * prefix=@"_dsbridge=";
-    if ([prompt hasPrefix:prefix])
-    {
-        NSString *method= [prompt substringFromIndex:[prefix length]];
-        NSString *result =[JSBUtil call:method :defaultText JavascriptInterfaceObject:_JavascriptInterfaceObject jscontext:webView];
+    NSString * prefix=[NSString stringWithFormat:@"%@=", BRIDGE_NAME];
+    NSString * cidPrefix=[NSString stringWithFormat:@"%@cid=", BRIDGE_NAME];
+    NSLog(@"runJavaScriptTextInputPanelWithPrompt prefix: %@, prompt: %@", prefix, prompt);
+    if([prompt hasPrefix:prefix]){
+        NSString *method=[prompt substringFromIndex:[prefix length]];
+        NSString *result=[JSBUtil call:method :defaultText JavascriptInterfaceObject:_JavascriptInterfaceObject jscontext:webView];
         completionHandler(result);
+    /*
+    }else if([prompt hasPrefix:cidPrefix]){
+        // TODO finish callback execution
+        NSString *cid=[prompt substringFromIndex:[cidPrefix length]];
+        NSLog(@"cid callback %@", cid);
+    */
     }else if([prompt hasPrefix:@"_dsinited"]){
         completionHandler(@"");
         if(javascriptContextInitedListener) javascriptContextInitedListener();
-        
-    }else {
+    }else{
         if(self.DSUIDelegate && [self.DSUIDelegate respondsToSelector:
                                  @selector(webView:runJavaScriptTextInputPanelWithPrompt
                                            :defaultText:initiatedByFrame
@@ -77,7 +86,7 @@ completionHandler:(void (^)(NSString * _Nullable result))completionHandler
         }else{
             dialogType=3;
             promptHandler=completionHandler;
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:prompt message:@"" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:prompt message:@"" delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"OK", nil];
             [alert setAlertViewStyle:UIAlertViewStylePlainTextInput];
             txtName = [alert textFieldAtIndex:0];
             txtName.text=defaultText;
@@ -90,7 +99,7 @@ completionHandler:(void (^)(NSString * _Nullable result))completionHandler
 initiatedByFrame:(WKFrameInfo *)frame
 completionHandler:(void (^)(void))completionHandler
 {
-    if( self.DSUIDelegate &&  [self.DSUIDelegate respondsToSelector:
+    if(self.DSUIDelegate &&  [self.DSUIDelegate respondsToSelector:
                                @selector(webView:runJavaScriptAlertPanelWithMessage
                                          :initiatedByFrame:completionHandler:)])
     {
@@ -101,10 +110,10 @@ completionHandler:(void (^)(void))completionHandler
         dialogType=1;
         alertHandler=completionHandler;
         UIAlertView *alertView =
-        [[UIAlertView alloc] initWithTitle:@"提示"
+        [[UIAlertView alloc] initWithTitle:@"Tip"
                                    message:message
                                   delegate:self
-                         cancelButtonTitle:@"确定"
+                         cancelButtonTitle:@"OK"
                          otherButtonTitles:nil,nil];
         [alertView show];
     }
@@ -113,7 +122,7 @@ completionHandler:(void (^)(void))completionHandler
 -(void)webView:(WKWebView *)webView runJavaScriptConfirmPanelWithMessage:(NSString *)message
 initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completionHandler
 {
-    if( self.DSUIDelegate && [self.DSUIDelegate respondsToSelector:
+    if(self.DSUIDelegate && [self.DSUIDelegate respondsToSelector:
                               @selector(webView:runJavaScriptConfirmPanelWithMessage:initiatedByFrame:completionHandler:)])
     {
         return[self.DSUIDelegate webView:webView runJavaScriptConfirmPanelWithMessage:message
@@ -123,11 +132,11 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
         dialogType=2;
         confirmHandler=completionHandler;
         UIAlertView *alertView =
-        [[UIAlertView alloc] initWithTitle:@"提示"
+        [[UIAlertView alloc] initWithTitle:@"Tip"
                                    message:message
                                   delegate:self
-                         cancelButtonTitle:@"取消"
-                         otherButtonTitles:@"确定", nil];
+                         cancelButtonTitle:@"Cancel"
+                         otherButtonTitles:@"OK", nil];
         [alertView show];
     }
 }
@@ -144,7 +153,7 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
         if(buttonIndex==1){
             promptHandler([txtName text]);
         }else{
-             promptHandler(@"");
+            promptHandler(@"");
         }
         promptHandler=nil;
         txtName=nil;
@@ -159,7 +168,7 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
 - (void)loadUrl: (NSString *)url
 {
     NSURLRequest* request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
-    [self loadRequest:request];//加载
+    [self loadRequest:request];
 }
 
 -(void)callHandler:(NSString *)methodName arguments:(NSArray *)args completionHandler:(void (^)(NSString *  _Nullable))completionHandler
@@ -167,8 +176,10 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
     if(!args){
         args=[[NSArray alloc] init];
     }
-    NSString *script=[NSString stringWithFormat:@"(window._dsf.%@||window.%@).apply(window._dsf||window,%@)",methodName, methodName,[JSBUtil objToJsonString:args]];
-    [self evaluateJavaScript:script completionHandler:^(id value,NSError * error){
+    // TODO support async callback
+    NSString *script=[NSString stringWithFormat:@"window[\"%@\"].invokeHandler && window[\"%@\"].invokeHandler(\"%@\", %@)", BRIDGE_NAME, BRIDGE_NAME, methodName, [JSBUtil objToJsonString:args]];
+    NSLog(@"callHandler %@", script);
+    [self evaluateJavaScript:script completionHandler:^(id value, NSError * error){
         if(completionHandler) completionHandler(value);
     }];
 }

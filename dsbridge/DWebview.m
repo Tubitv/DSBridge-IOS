@@ -16,7 +16,6 @@
 {
     void(^javascriptContextInitedListener)(void);
     //NSString * ua;
-    
 }
 
 @synthesize webview;
@@ -28,6 +27,7 @@
         if ([[UIDevice currentDevice].systemVersion floatValue] >=8.0) {
             wv=[[DWKwebview alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, frame.size.height)];
         }else{
+            // TODO @steven remove DUIwebview since we only consider iOS 8+?
             wv=[[DUIwebview alloc] initWithFrame:frame];
         }
         [self addSubview:wv];
@@ -149,10 +149,10 @@
     }else{
         [(DWKwebview *)webview evaluateJavaScript:javaScriptString completionHandler:^(NSString * result, NSError * error){
             if(error){
-                NSLog(@"WKwebview exec js error: %@",error);
+                NSLog(@"WKwebview exec js error: %@", error);
             }
             if(!result) result=@"";
-            if(completionHandler ) completionHandler(error?nil:result);
+            if(completionHandler) completionHandler(error ? nil : result);
         }];
     }
 }
@@ -165,7 +165,6 @@
         [(DWKwebview *)webview callHandler:methodName arguments:args completionHandler:completionHandler];
     }
 }
-
 
 - (void)clearCache
 {
@@ -189,7 +188,7 @@
         }];
         
     } else {
-        //先删除cookie
+        // clear cookie first
         NSHTTPCookie *cookie;
         NSHTTPCookieStorage *storage = [NSHTTPCookieStorage sharedHTTPCookieStorage];
         for (cookie in [storage cookies])
@@ -206,10 +205,10 @@
         NSString *webKitFolderInCachesfs = [NSString
                                             stringWithFormat:@"%@/Caches/%@/fsCachedData",libraryDir,bundleId];
         NSError *error;
-        /* iOS8.0 WebView Cache的存放路径 */
+        /* iOS8.0 WebView Cache file path */
         [[NSFileManager defaultManager] removeItemAtPath:webKitFolderInCaches error:&error];
         [[NSFileManager defaultManager] removeItemAtPath:webkitFolderInLib error:nil];
-        /* iOS7.0 WebView Cache的存放路径 */
+        /* iOS7.0 WebView Cache file path */
         [[NSFileManager defaultManager] removeItemAtPath:webKitFolderInCachesfs error:&error];
         NSString *cookiesFolderPath = [libraryDir stringByAppendingString:@"/Cookies"];
         [[NSFileManager defaultManager] removeItemAtPath:cookiesFolderPath error:&error];

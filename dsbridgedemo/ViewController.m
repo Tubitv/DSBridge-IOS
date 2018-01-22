@@ -38,7 +38,13 @@
         [_webview callHandler:@"addValue"
                     arguments:[[NSArray alloc] initWithObjects:@1,@"hello", nil]
             completionHandler:^(NSString * value){
-                NSLog(@"%@",value);
+                NSLog(@"addValue %@", value);
+            }];
+        
+        [_webview callHandler:@"addValueAsync"
+                    arguments:[[NSArray alloc] initWithObjects:@1,@"hello", nil]
+            completionHandler:^(NSString * value){
+                NSLog(@"addValueAsync %@", value);
             }];
     }];
 }
@@ -48,6 +54,4 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
-
 @end

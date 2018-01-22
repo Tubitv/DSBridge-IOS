@@ -107,7 +107,7 @@ static NSHashTable* g_webViews = nil;
     ctx[@"_dsbridge"]=^(NSString * method,NSString * args){
         return [JSBUtil call:method :args JavascriptInterfaceObject:JavascriptInterfaceObject jscontext:ctx_];
     };
-    [ctx evaluateScript:INIT_SCRIPT];
+    // [ctx evaluateScript:INIT_SCRIPT];
 }
 
 - (void)setJavascriptContextInitedListener:(void (^)(void))callback

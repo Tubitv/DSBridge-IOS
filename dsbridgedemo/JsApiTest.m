@@ -10,47 +10,57 @@
 
 @interface JsApiTest(){
   NSTimer * timer ;
-  void(^hanlder)(NSString *s,BOOL isComplete);
+  void(^handler)(NSString *s,BOOL isComplete);
   int value;
 }
 @end
 
 @implementation JsApiTest
-
-- (NSString *) testSyn:(NSDictionary *) args
+- (NSString *) testSync:(NSDictionary *) args
 {
-    return [(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[ syn call]"];
+    return [(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[sync call]"];
 }
 
-- (void) testAsyn:(NSDictionary *) args :(void (^)(NSString * _Nullable result,BOOL complete))completionHandler
+- (void) testAsync:(NSDictionary *) args :(void (^)(NSString * _Nullable result, BOOL complete))completionHandler
 {
-    completionHandler([(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[ asyn call]"],YES);
+    // FIXME we could do better, handling the details in lib layer
+    NSDictionary *dict=@{ @"result": [(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[async call]"] };
+    NSError *error;
+    NSData *result=[NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
+    completionHandler([[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding], YES);
 }
 
-- (NSString *)testNoArgSyn:(NSDictionary *) args
+- (NSString *)testNoArgSync:(NSDictionary *) args
 {
-    return  @"testNoArgSyn called [ syn call]";
+    return  @"testNoArgSyn called [sync call]";
 }
 
-- ( void )testNoArgAsyn:(NSDictionary *) args :(void (^)(NSString * _Nullable result,BOOL complete))completionHandler
+- (void)testNoArgAsync:(NSDictionary *) args :(void (^)(NSString * _Nullable result, BOOL complete))completionHandler
 {
-    completionHandler(@"testNoArgAsyn called [ asyn call]",YES);
+    // FIXME we could do better, handling the details in lib layer
+    NSDictionary *dict=@{ @"result": @"testNoArgAsync called [async call]" };
+    NSError *error;
+    NSData *result=[NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
+    completionHandler([[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding], YES);
 }
 
-- ( void )callProgress:(NSDictionary *) args :(void (^)(NSString * _Nullable result,BOOL complete))completionHandler
+- (void)callProgress:(NSDictionary *) args :(void (^)(NSString * _Nullable result, BOOL complete))completionHandler
 {
-    value=10;
-    hanlder=completionHandler;
-    timer =  [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(onTimer:) userInfo:nil repeats:YES];
+    value = 10;
+    handler = completionHandler;
+    timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(onTimer:) userInfo:nil repeats:YES];
 }
 
 -(void)onTimer:t{
-    if(value!=-1){
-        hanlder([NSString stringWithFormat:@"%d",value--],NO);
-    }else{
-        hanlder(@"",YES);
+    if (value != -1) {
+        // FIXME we could do better, handling the details in lib layer
+        NSDictionary *dict=@{ @"result": [NSString stringWithFormat:@"%d", value--] };
+        NSError *error;
+        NSData *result=[NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
+        handler([[NSString alloc] initWithData:result encoding:NSUTF8StringEncoding], NO);
+    } else {
+        handler(@"", YES);
         [timer invalidate];
     }
 }
-
 @end
