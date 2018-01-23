@@ -42,10 +42,6 @@
     WKUserScript *script = [[WKUserScript alloc] initWithSource:js
                                                   injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                forMainFrameOnly:YES];
-    WKUserScript *scriptDomReady = [[WKUserScript alloc] initWithSource:@";prompt('_dsinited');"
-                                                          injectionTime:WKUserScriptInjectionTimeAtDocumentEnd
-                                                        forMainFrameOnly:YES];
-    [configuration.userContentController addUserScript:scriptDomReady];
     [configuration.userContentController addUserScript:script];
     self = [super initWithFrame:frame configuration:configuration];
     if (self) {
@@ -53,13 +49,14 @@
     }
     return self;
 }
+
 - (void)webView:(WKWebView *)webView runJavaScriptTextInputPanelWithPrompt:(NSString *)prompt
     defaultText:(nullable NSString *)defaultText initiatedByFrame:(WKFrameInfo *)frame
 completionHandler:(void (^)(NSString * _Nullable result))completionHandler
 {
     NSString * prefix=[NSString stringWithFormat:@"%@=", BRIDGE_NAME];
     NSString * cidPrefix=[NSString stringWithFormat:@"%@cid=", BRIDGE_NAME];
-    NSLog(@"runJavaScriptTextInputPanelWithPrompt prefix: %@, prompt: %@", prefix, prompt);
+    NSLog(@"runJavaScriptTextInputPanelWithPrompt %@, defaultText: %@", prompt, defaultText);
     if([prompt hasPrefix:prefix]){
         NSString *method=[prompt substringFromIndex:[prefix length]];
         NSString *result=[JSBUtil call:method :defaultText JavascriptInterfaceObject:_JavascriptInterfaceObject jscontext:webView];
@@ -73,10 +70,11 @@ completionHandler:(void (^)(NSString * _Nullable result))completionHandler
         handler=callbackDict[cid];
         if(handler){
             handler([json valueForKey:@"result"]);
+            [callbackDict removeObjectForKey:cid];
         }
-    }else if([prompt hasPrefix:@"_dsinited"]){
+    }else if([prompt hasPrefix:[NSString stringWithFormat:@"%@init=", BRIDGE_NAME]]){
         completionHandler(@"");
-        if(javascriptContextInitedListener) javascriptContextInitedListener();
+        if(javascriptBridgeInitedListener) javascriptBridgeInitedListener();
     }else{
         if(self.DSUIDelegate && [self.DSUIDelegate respondsToSelector:
                                  @selector(webView:runJavaScriptTextInputPanelWithPrompt
@@ -164,9 +162,9 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
     }
 }
 
-- (void)setJavascriptContextInitedListener:(void (^)(void))callback
+- (void)setJavascriptBridgeInitedListener:(void (^)(void))callback
 {
-    javascriptContextInitedListener=callback;
+    javascriptBridgeInitedListener=callback;
 }
 
 - (void)loadUrl: (NSString *)url
@@ -184,7 +182,7 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
     if(completionHandler) {
         int cid = counter++;
         callbackIdString=[NSString stringWithFormat:@"%i", cid];
-        [callbackDict setObject:completionHandler forKey:callbackIdString];
+        [callbackDict setObject:[completionHandler copy] forKey:callbackIdString];
     }
     // TODO support async callback
     NSString *script=[NSString stringWithFormat:@"window[\"%@\"].invokeHandler && window[\"%@\"].invokeHandler(\"%@\", %@, %@)", BRIDGE_NAME, BRIDGE_NAME, methodName, [JSBUtil objToJsonString:args], callbackIdString];

@@ -10,11 +10,11 @@
 
 @interface DWKwebview : WKWebView <WKUIDelegate,WKNavigationDelegate,UIAlertViewDelegate >
 {
-    void(^javascriptContextInitedListener)(void);
+    void(^javascriptBridgeInitedListener)(void);
 }
 @property (nullable, nonatomic, weak) id <WKUIDelegate> DSUIDelegate;
 @property (nullable, nonatomic, weak) id JavascriptInterfaceObject;
 - (void)loadUrl: (NSString * _Nonnull) url;
-- (void) callHandler:(NSString * _Nonnull) methodName  arguments:(NSArray * _Nullable) args completionHandler:(void (^ _Nullable)(NSString *  _Nullable))completionHandler;
-- (void)setJavascriptContextInitedListener:(void(^_Nullable)(void))callback;
+- (void) callHandler:(NSString * _Nonnull) methodName arguments:(NSArray * _Nullable) args completionHandler:(void (^ _Nullable)(NSString *  _Nullable))completionHandler;
+- (void)setJavascriptBridgeInitedListener:(void(^_Nullable)(void))callback;
 @end

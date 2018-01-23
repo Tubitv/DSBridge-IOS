@@ -63,7 +63,6 @@ function getJsBridge(bridgeName) {
         args['_callbackId'] = callbackId;
       }
       args = JSON.stringify(args || {});
-      console.log('===callHandler', name, args, callback);
 
       // WKWebview
       if (internalBridge.wk) {
@@ -74,14 +73,19 @@ function getJsBridge(bridgeName) {
       return ret;
     },
     registerHandler: function (name, handler) {
-      console.log('===registerHandler' + name);
       this.handlerMap[name] = handler;
+    },
+    init: function () {
+      if (internalBridge.wk) {
+        prompt(internalBridgeName + 'init=');
+      } else {
+        internalBridge.init();
+      }
     },
   };
 
   // extend internal bridge
   internalBridge.invokeHandler = function (name, args, callbackId) {
-    console.log('===invokeHandler', name, args, callbackId);
     var handler = jsBridge.handlerMap[name];
     var sendResponse = function (result) {
       if (typeof callbackId !== 'number') return;
@@ -92,18 +96,13 @@ function getJsBridge(bridgeName) {
       }
     };
 
-    var response = {};
     if (handler.length === 2) {
       // async handler
-      handler(args, function (error, ret) {
-        if (error) {
-          response.error = error.toString();
-        } else {
-          response.result = ret;
-        }
+      handler(args, function (response) {
         sendResponse(JSON.stringify(response));
       });
     } else {
+      var response = {};
       try {
         response.result = handler(args);
       } catch (ex) {
@@ -113,10 +112,6 @@ function getJsBridge(bridgeName) {
     }
   };
   internalBridge.invokeCallback = function (callbackId, result, complete) {
-    console.log('===invokeCallback' + complete);
-    console.log(callbackId);
-    console.log(result);
-    console.log(typeof complete);
     var callback = jsBridge.callbackMap[callbackId];
     if (complete) {
       delete jsBridge.callbackMap[callbackId];
@@ -131,20 +126,20 @@ function getJsBridge(bridgeName) {
 // bridge demo
 
 var bridge = getJsBridge();
-console.log(bridge);
+bridge.init();
 
 function callSync() {
   alert(bridge.callHandler('testSync', { msg: 'testSync' }));
 }
 
 function callAsync() {
-  alert(bridge.callHandler('testAsync', { msg: 'testAsync' }, function (ret) {
+  bridge.callHandler('testAsync', { msg: 'testAsync' }, function (ret) {
     if (ret.error) {
       console.error(ret.error);
       return;
     }
     alert(ret.result);
-  }));
+  });
 }
 
 function callNoArgSync() {
@@ -176,13 +171,13 @@ function callProgress(){
 }
 
 // sync handler
-bridge.registerHandler('addValue', function (args) {
-  return args[0] + args[1];
+bridge.registerHandler('addValue', function (data) {
+  return data[0] + data[1];
 });
 
 // async handler
-bridge.registerHandler('addValueAsync', function (args, callback) {
-  callback(null, args[0] + args[1]);
+bridge.registerHandler('addValueAsync', function (data, callback) {
+  callback({ result: data[0] + data[1] });
 });
 </script>
     </body>

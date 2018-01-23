@@ -30,7 +30,6 @@ bool g_ds_have_pending=false;
 {
     NSString *methodOne = [JSBUtil methodByNameArg:1 selName:method class:[JavascriptInterfaceObject class]];
     NSString *methodTwo = [JSBUtil methodByNameArg:2 selName:method class:[JavascriptInterfaceObject class]];
-    NSLog(@"call methodOne: %@, methodTwo: %@", methodOne, methodTwo);
     SEL sel=NSSelectorFromString(methodOne);
     SEL selasync=NSSelectorFromString(methodTwo);
     NSString *error=[NSString stringWithFormat:@"Error! \n Method %@ is not invoked, since there is not a implementation for it", method];
@@ -50,27 +49,22 @@ bool g_ds_have_pending=false;
                         if(value == nil){
                             value=@"";
                         }
-                        // FIXME special process for no return value, we could make it more OC
                         if([value isEqual: @""]){
                             value=[JSBUtil objToJsonString:@{ @"result" : @"" }];
                         }
                         NSString *js=[NSString stringWithFormat:@"%@.invokeCallback && %@.invokeCallback(%@, %@, %@)", BRIDGE_NAME, BRIDGE_NAME, cb, value, complete ? @"true" : @"false"];
                         NSLog(@"call js: %@", js);
-                        if([jscontext isKindOfClass:JSContext.class]){
-                            [jscontext evaluateScript:js];
-                        }else if([jscontext isKindOfClass:WKWebView.class]){
-                            @synchronized(jscontext)
-                            {
-                                UInt64 t=[[NSDate date] timeIntervalSince1970]*1000;
-                                g_ds_js_cache=[g_ds_js_cache stringByAppendingString:js];
-                                if(t-g_ds_last_call_time<50){
-                                    if(!g_ds_have_pending){
-                                        [self evalJavascript:(WKWebView *)jscontext :50];
-                                        g_ds_have_pending=true;
-                                    }
-                                }else{
-                                    [self evalJavascript:(WKWebView *)jscontext  :0];
+                        @synchronized(jscontext)
+                        {
+                            UInt64 t=[[NSDate date] timeIntervalSince1970]*1000;
+                            g_ds_js_cache=[g_ds_js_cache stringByAppendingString:js];
+                            if(t-g_ds_last_call_time<50){
+                                if(!g_ds_have_pending){
+                                    [self evalJavascript:(WKWebView *)jscontext :50];
+                                    g_ds_have_pending=true;
                                 }
+                            }else{
+                                [self evalJavascript:(WKWebView *)jscontext  :0];
                             }
                         }
                     };
@@ -94,11 +88,7 @@ bool g_ds_have_pending=false;
             }
             NSString*js=[error stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
             js=[NSString stringWithFormat:@"window.alert(decodeURIComponent(\"%@\"));", js];
-            if([jscontext isKindOfClass:JSContext.class]){
-                [jscontext evaluateScript:js];
-            }else if([jscontext isKindOfClass:WKWebView.class]){
-                [(WKWebView *)jscontext evaluateJavaScript:js completionHandler:nil];
-            }
+            [(WKWebView *)jscontext evaluateJavaScript:js completionHandler:nil];
             NSLog(@"%@", error);
         }while (0);
     }
