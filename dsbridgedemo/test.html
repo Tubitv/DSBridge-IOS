@@ -81,20 +81,35 @@ function getJsBridge(bridgeName) {
 
   // extend internal bridge
   internalBridge.invokeHandler = function (name, args, callbackId) {
-    console.log('===invokeHandler', name, args);
+    console.log('===invokeHandler', name, args, callbackId);
     var handler = jsBridge.handlerMap[name];
+    var sendResponse = function (result) {
+      if (typeof callbackId !== 'number') return;
+      if (internalBridge.wk) {
+        prompt(internalBridgeName + 'cid=' + callbackId, result);
+      } else {
+        internalBridge.returnValue(callbackId, result);
+      }
+    };
+
+    var response = {};
     if (handler.length === 2) {
       // async handler
-      handler(args, function (ret) {
-        if (typeof callbackId === 'undefined') return;
-        if (internalBridge.wk) {
-          prompt(internalBridgeName + 'cid=' + callbackId, JSON.stringify(ret));
+      handler(args, function (error, ret) {
+        if (error) {
+          response.error = error.toString();
         } else {
-          internalBridge.returnValue(callbackId, JSON.stringify(ret));
+          response.result = ret;
         }
+        sendResponse(JSON.stringify(response));
       });
     } else {
-      internalBridge.returnValue(callbackId, JSON.stringify(handler(args)));
+      try {
+        response.result = handler(args);
+      } catch (ex) {
+        response.error = ex.toString();
+      }
+      sendResponse(JSON.stringify(response));
     }
   };
   internalBridge.invokeCallback = function (callbackId, result, complete) {
@@ -167,7 +182,7 @@ bridge.registerHandler('addValue', function (args) {
 
 // async handler
 bridge.registerHandler('addValueAsync', function (args, callback) {
-  callback(args[0] + args[1]);
+  callback(null, args[0] + args[1]);
 });
 </script>
     </body>

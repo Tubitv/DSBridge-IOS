@@ -64,12 +64,16 @@ completionHandler:(void (^)(NSString * _Nullable result))completionHandler
         NSString *method=[prompt substringFromIndex:[prefix length]];
         NSString *result=[JSBUtil call:method :defaultText JavascriptInterfaceObject:_JavascriptInterfaceObject jscontext:webView];
         completionHandler(result);
-    /*
     }else if([prompt hasPrefix:cidPrefix]){
-        // TODO finish callback execution
+        completionHandler(@"");
         NSString *cid=[prompt substringFromIndex:[cidPrefix length]];
-        NSLog(@"cid callback %@", cid);
-    */
+        NSDictionary *json=[JSBUtil jsonStringToObject:defaultText];
+        NSLog(@"cid callback %@, result: %@, defaultText: %@", cid, json, defaultText);
+        void (^handler)(NSString * _Nullable result);
+        handler=callbackDict[cid];
+        if(handler){
+            handler([json valueForKey:@"result"]);
+        }
     }else if([prompt hasPrefix:@"_dsinited"]){
         completionHandler(@"");
         if(javascriptContextInitedListener) javascriptContextInitedListener();
@@ -176,11 +180,16 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
     if(!args){
         args=[[NSArray alloc] init];
     }
+    NSString *callbackIdString=@"";
+    if(completionHandler) {
+        int cid = counter++;
+        callbackIdString=[NSString stringWithFormat:@"%i", cid];
+        [callbackDict setObject:completionHandler forKey:callbackIdString];
+    }
     // TODO support async callback
-    NSString *script=[NSString stringWithFormat:@"window[\"%@\"].invokeHandler && window[\"%@\"].invokeHandler(\"%@\", %@)", BRIDGE_NAME, BRIDGE_NAME, methodName, [JSBUtil objToJsonString:args]];
+    NSString *script=[NSString stringWithFormat:@"window[\"%@\"].invokeHandler && window[\"%@\"].invokeHandler(\"%@\", %@, %@)", BRIDGE_NAME, BRIDGE_NAME, methodName, [JSBUtil objToJsonString:args], callbackIdString];
     NSLog(@"callHandler %@", script);
     [self evaluateJavaScript:script completionHandler:^(id value, NSError * error){
-        if(completionHandler) completionHandler(value);
     }];
 }
 
