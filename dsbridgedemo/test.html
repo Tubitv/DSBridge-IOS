@@ -6,7 +6,7 @@
             <meta name="renderer" content="webkit">
                 <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
                     <meta name="viewport" content="width=device-width,initial-scale=0.5,user-scalable=no"/>
-                    
+                    <script src="./bridge.js" type="text/javascript"></script>
                     </head>
     <style>
         .btn {
@@ -39,93 +39,17 @@
         <div class="btn" onclick="alert(prompt('Please input user name.','Hello, world'))">prompt test</div>
         
 <script>
-/* BRIDGE BEGIN */
-function getJsBridge(bridgeName) {
-  var internalBridgeName = bridgeName || '_dsbridge';
-  var internalBridge = window[internalBridgeName];
-  if (!internalBridge) {
-    throw new Error('No injected global bridge object.');
-  }
+var bridge = DSBridge.getBridge();
 
-  var counter = 0;
-  var jsBridge = {
-    callbackMap: {},
-    handlerMap: {},
-    callHandler: function (name, args, callback) {
-      var ret = '';
-      if (typeof args == 'function') {
-        callback = args;
-        args = {};
-      }
-      if (typeof callback == 'function') {
-        var callbackId = counter++;
-        this.callbackMap[callbackId] = callback;
-        args['_callbackId'] = callbackId;
-      }
-      args = JSON.stringify(args || {});
+// sync handler
+bridge.registerHandler('addValue', function (data) {
+  return data.left + data.right;
+});
+// async handler
+bridge.registerHandler('addValueAsync', function (data, callback) {
+  callback({ result: data.left + data.right });
+});
 
-      // WKWebview
-      if (internalBridge.wk) {
-        ret = prompt(internalBridgeName + '=' + name, args);
-      } else {
-        ret = internalBridge.callHandler(name, args);
-      }
-      return ret;
-    },
-    registerHandler: function (name, handler) {
-      this.handlerMap[name] = handler;
-    },
-    init: function () {
-      if (internalBridge.wk) {
-        prompt(internalBridgeName + 'init=');
-      } else {
-        internalBridge.init();
-      }
-    },
-  };
-
-  // extend internal bridge
-  internalBridge.invokeHandler = function (name, args, callbackId) {
-    var handler = jsBridge.handlerMap[name];
-    var sendResponse = function (result) {
-      if (typeof callbackId !== 'number') return;
-      if (internalBridge.wk) {
-        prompt(internalBridgeName + 'cid=' + callbackId, result);
-      } else {
-        internalBridge.returnValue(callbackId, result);
-      }
-    };
-
-    if (handler.length === 2) {
-      // async handler
-      handler(args, function (response) {
-        sendResponse(JSON.stringify(response));
-      });
-    } else {
-      var response = {};
-      try {
-        response.result = handler(args);
-      } catch (ex) {
-        response.error = ex.toString();
-      }
-      sendResponse(JSON.stringify(response));
-    }
-  };
-  internalBridge.invokeCallback = function (callbackId, result, complete) {
-    var callback = jsBridge.callbackMap[callbackId];
-    if (complete) {
-      delete jsBridge.callbackMap[callbackId];
-    }
-    callback(result);
-  };
-
-  return jsBridge;
-}
-/* BRIDGE END */
-
-// bridge demo
-
-var bridge = getJsBridge();
 bridge.init();
 
 function callSync() {
@@ -169,16 +93,6 @@ function callProgress(){
     document.getElementById('progress').innerText = ret.result;
   });
 }
-
-// sync handler
-bridge.registerHandler('addValue', function (data) {
-  return data[0] + data[1];
-});
-
-// async handler
-bridge.registerHandler('addValueAsync', function (data, callback) {
-  callback({ result: data[0] + data[1] });
-});
 </script>
     </body>
 </html>

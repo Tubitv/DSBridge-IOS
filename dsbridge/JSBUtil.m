@@ -26,14 +26,14 @@ UInt64 g_ds_last_call_time = 0;
 NSString *g_ds_js_cache=@"";
 bool g_ds_have_pending=false;
 
-+(NSString *)call:(NSString*) method :(NSString*) args JavascriptInterfaceObject:(id) JavascriptInterfaceObject jscontext:(id) jscontext
++(NSDictionary *)call:(NSString*) method :(NSString*) args JavascriptInterfaceObject:(id) JavascriptInterfaceObject jscontext:(id) jscontext
 {
     NSString *methodOne = [JSBUtil methodByNameArg:1 selName:method class:[JavascriptInterfaceObject class]];
     NSString *methodTwo = [JSBUtil methodByNameArg:2 selName:method class:[JavascriptInterfaceObject class]];
     SEL sel=NSSelectorFromString(methodOne);
     SEL selasync=NSSelectorFromString(methodTwo);
     NSString *error=[NSString stringWithFormat:@"Error! \n Method %@ is not invoked, since there is not a implementation for it", method];
-    NSString *result=@"";
+    NSDictionary *result;
     if(!JavascriptInterfaceObject){
         NSLog(@"Js bridge method called, but there is no JavascriptInterfaceObject, please set JavascriptInterfaceObject first!");
     }else{
@@ -43,16 +43,9 @@ bool g_ds_have_pending=false;
             if(json && (cb=[json valueForKey:@"_callbackId"])){
                 [json removeObjectForKey:@"_callbackId"];
                 if([JavascriptInterfaceObject respondsToSelector:selasync]){
-                    // FIXME currently, `value` should be a json string.
-                    // a better way is, make it a serializable object, and stringify it inside of `completionHandler`, our developers should be glad to see it
-                    void (^completionHandler)(NSString *, BOOL) = ^(NSString * value, BOOL complete){
-                        if(value == nil){
-                            value=@"";
-                        }
-                        if([value isEqual: @""]){
-                            value=[JSBUtil objToJsonString:@{ @"result" : @"" }];
-                        }
-                        NSString *js=[NSString stringWithFormat:@"%@.invokeCallback && %@.invokeCallback(%@, %@, %@)", BRIDGE_NAME, BRIDGE_NAME, cb, value, complete ? @"true" : @"false"];
+                    // NOTE `value` should be a dictionary with `result` property if succeed, or `error` property if fail
+                    void (^completionHandler)(NSDictionary *, BOOL) = ^(NSDictionary * value, BOOL complete){
+                        NSString *js=[NSString stringWithFormat:@"%@.invokeCallback && %@.invokeCallback(%@, %@, %@)", BRIDGE_NAME, BRIDGE_NAME, cb, [JSBUtil objToJsonString:value], complete ? @"true" : @"false"];
                         NSLog(@"call js: %@", js);
                         @synchronized(jscontext)
                         {
@@ -75,7 +68,7 @@ bool g_ds_have_pending=false;
                     //the return value of performSelector always seem to be the first argument of the selector in real device(simulator is nil).
                     //So,you should declare the return type of all api as NSString explicitly.
                     if(result==(id)json){
-                        result=@"";
+                        result=@{};
                     }
                     
                     break;
@@ -89,12 +82,13 @@ bool g_ds_have_pending=false;
             NSString*js=[error stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
             js=[NSString stringWithFormat:@"window.alert(decodeURIComponent(\"%@\"));", js];
             [(WKWebView *)jscontext evaluateJavaScript:js completionHandler:nil];
-            NSLog(@"%@", error);
+            NSLog(@"error %@", error);
         }while (0);
     }
-    if(result == nil||![result isKindOfClass:[NSString class]]){
-        result=@"";
+    if(result == nil||![result isKindOfClass:[NSDictionary class]]){
+        result=@{};
     }
+    NSLog(@"JSBUtil call result %@", result);
     return result;
 }
 

@@ -38,7 +38,6 @@
     counter=0;
     callbackDict=[NSMutableDictionary dictionary];
     NSString * js = [NSString stringWithFormat:@"window[\"%@\"] = window[\"%@\"] || { wk: true };", BRIDGE_NAME, BRIDGE_NAME];
-    NSLog(@"initWithFrame %@", js);
     WKUserScript *script = [[WKUserScript alloc] initWithSource:js
                                                   injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                forMainFrameOnly:YES];
@@ -56,20 +55,18 @@ completionHandler:(void (^)(NSString * _Nullable result))completionHandler
 {
     NSString * prefix=[NSString stringWithFormat:@"%@=", BRIDGE_NAME];
     NSString * cidPrefix=[NSString stringWithFormat:@"%@cid=", BRIDGE_NAME];
-    NSLog(@"runJavaScriptTextInputPanelWithPrompt %@, defaultText: %@", prompt, defaultText);
     if([prompt hasPrefix:prefix]){
         NSString *method=[prompt substringFromIndex:[prefix length]];
-        NSString *result=[JSBUtil call:method :defaultText JavascriptInterfaceObject:_JavascriptInterfaceObject jscontext:webView];
-        completionHandler(result);
+        NSDictionary *result=[JSBUtil call:method :defaultText JavascriptInterfaceObject:_JavascriptInterfaceObject jscontext:webView];
+        NSLog(@"call result %@", [JSBUtil objToJsonString:result]);
+        completionHandler([JSBUtil objToJsonString:result]);
     }else if([prompt hasPrefix:cidPrefix]){
         completionHandler(@"");
         NSString *cid=[prompt substringFromIndex:[cidPrefix length]];
-        NSDictionary *json=[JSBUtil jsonStringToObject:defaultText];
-        NSLog(@"cid callback %@, result: %@, defaultText: %@", cid, json, defaultText);
-        void (^handler)(NSString * _Nullable result);
+        void (^handler)(NSDictionary * _Nullable result);
         handler=callbackDict[cid];
         if(handler){
-            handler([json valueForKey:@"result"]);
+            handler([JSBUtil jsonStringToObject:defaultText]);
             [callbackDict removeObjectForKey:cid];
         }
     }else if([prompt hasPrefix:[NSString stringWithFormat:@"%@init=", BRIDGE_NAME]]){
@@ -173,10 +170,10 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
     [self loadRequest:request];
 }
 
--(void)callHandler:(NSString *)methodName arguments:(NSArray *)args completionHandler:(void (^)(NSString *  _Nullable))completionHandler
+-(void)callHandler:(NSString *)methodName data:(NSDictionary *)data completionHandler:(void (^)(NSDictionary *  _Nullable))completionHandler
 {
-    if(!args){
-        args=[[NSArray alloc] init];
+    if(!data){
+        data=@{};
     }
     NSString *callbackIdString=@"";
     if(completionHandler) {
@@ -184,11 +181,8 @@ initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completi
         callbackIdString=[NSString stringWithFormat:@"%i", cid];
         [callbackDict setObject:[completionHandler copy] forKey:callbackIdString];
     }
-    // TODO support async callback
-    NSString *script=[NSString stringWithFormat:@"window[\"%@\"].invokeHandler && window[\"%@\"].invokeHandler(\"%@\", %@, %@)", BRIDGE_NAME, BRIDGE_NAME, methodName, [JSBUtil objToJsonString:args], callbackIdString];
-    NSLog(@"callHandler %@", script);
-    [self evaluateJavaScript:script completionHandler:^(id value, NSError * error){
-    }];
+    NSString *script=[NSString stringWithFormat:@"window[\"%@\"].invokeHandler && window[\"%@\"].invokeHandler(\"%@\", %@, %@)", BRIDGE_NAME, BRIDGE_NAME, methodName, [JSBUtil objToJsonString:data], callbackIdString];
+    [self evaluateJavaScript:script completionHandler:^(id value, NSError * error){}];
 }
 
 @end

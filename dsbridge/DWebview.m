@@ -104,9 +104,9 @@
     }];
 }
 
--(void)callHandler:(NSString *)methodName arguments:(NSArray *)args completionHandler:(void (^)(NSString * _Nullable))completionHandler
+-(void)callHandler:(NSString *)methodName data:(NSDictionary *)data completionHandler:(void (^)(NSDictionary * _Nullable))completionHandler
 {
-    [(DWKwebview *)webview callHandler:methodName arguments:args completionHandler:completionHandler];
+    [(DWKwebview *)webview callHandler:methodName data:data completionHandler:completionHandler];
 }
 
 - (void)clearCache

@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setJavascriptBridgeInitedListener:(void (^)(void))callback;
 - (void)evaluateJavaScript:(NSString *)javaScriptString completionHandler:(void (^ _Nullable)(NSString *result))completionHandler;
--(void)callHandler:(NSString *)methodName arguments:(NSArray * _Nullable)args completionHandler:(void (^)(NSString *  _Nullable))completionHandler;
+-(void)callHandler:(NSString *)methodName data:(NSDictionary * _Nullable)data completionHandler:(void (^)(NSDictionary *  _Nullable))completionHandler;
 
 - (void) clearCache;
 

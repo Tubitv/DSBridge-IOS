@@ -24,7 +24,7 @@
     webview.JavascriptInterfaceObject=jsApi;
     [self.view addSubview:webview];
     
-    //加载test.html
+    // load test.html
     NSString *path = [[NSBundle mainBundle] bundlePath];
     NSURL *baseURL = [NSURL fileURLWithPath:path];
     NSString * htmlPath = [[NSBundle mainBundle] pathForResource:@"test"
@@ -36,15 +36,15 @@
     __weak DWebview * _webview=webview;
     [webview setJavascriptBridgeInitedListener:^(){
         [_webview callHandler:@"addValue"
-                    arguments:[[NSArray alloc] initWithObjects:@1, @"hello", nil]
-            completionHandler:^(NSString * value){
-                NSLog(@"addValue %@", value);
+                    data:@{ @"left": @1, @"right": @"hello" }
+            completionHandler:^(NSDictionary * value){
+                NSLog(@"addValue %@", [value objectForKey:@"result"]);
             }];
         
         [_webview callHandler:@"addValueAsync"
-                    arguments:[[NSArray alloc] initWithObjects:@1, @"hello", nil]
-            completionHandler:^(NSString * value){
-                NSLog(@"addValueAsync %@", value);
+                    data:@{ @"left": @1, @"right": @"hello" }
+            completionHandler:^(NSDictionary * value){
+                NSLog(@"addValueAsync %@", [value objectForKey:@"result"]);
             }];
     }];
 }
