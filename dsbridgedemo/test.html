@@ -6,7 +6,7 @@
             <meta name="renderer" content="webkit">
                 <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
                     <meta name="viewport" content="width=device-width,initial-scale=0.5,user-scalable=no"/>
-                    
+                    <script src="./bridge.js" type="text/javascript"></script>
                     </head>
     <style>
         .btn {
@@ -27,73 +27,72 @@
     
         </style>
     <body>
-        <div class="btn" onclick="callSyn()">同步调用</div>
-        <div class="btn" onclick="callAsyn()">异步调用</div>
-        <div class="btn" onclick="callNoArgSyn()">无参函数同步调用</div>
-        <div class="btn" onclick="callNoArgAsyn()">无参函数异步调用</div>
-        <div class="btn" onclick="callAsyn_()">压力测试，连续调用10w次异步api</div>
-        <div class="btn" onclick="callNever()">不调用(没有@JavascriptInterface标注)<br/>仅Android,IOS忽略此项</div>
+        <div class="btn" onclick="callSync()">Sync Call</div>
+        <div class="btn" onclick="callAsync()">Async Call</div>
+        <div class="btn" onclick="callNoArgSync()">No Arg Sync Call</div>
+        <div class="btn" onclick="callNoArgAsync()">No Arg Async Call</div>
+        <div class="btn" onclick="callAsyn_()">Async Call for 100k times</div>
+        <div class="btn" onclick="callNever()">Call Unexist Method</div>
         
-        <div class="btn" onclick="callProgress()">连续回调 <span id='progress'></span></div>
+        <div class="btn" onclick="callProgress()">Progress Call <span id='progress'></span></div>
         <div class="btn" onclick="alert(confirm('Press a button'))">confirm test</div>
-        <div class="btn" onclick="alert(prompt('Please input user name.','你好，世界'))">prompt test</div>
+        <div class="btn" onclick="alert(prompt('Please input user name.','Hello, world'))">prompt test</div>
         
-        <script>
-            
-            var bridge = getJsBridge();
-            console.log(bridge)
-            
-            function callSyn() {
-                alert(bridge.call("testSyn", {msg: "testSyn"}))
-            }
-        
-        function callAsyn() {
-            bridge.call("testAsyn", {msg: "testAsyn"}, function (v) {
-                        alert(v)
-                    })
-        }
-        
-        function callAsyn_() {
-            //Because the callback will be excuted in js thread, too much callback execute at the same moment
-            //will lead to  ui block, please wait patiently.
-            for(var i=0;i<100000;i++){
-                bridge.call("testAsyn", {msg: "js+"+i}, function (v) {
-                            if(v=="js+99999[ asyn call]"){
-                                alert("全部任务执行结束")
-                            }
-                     })
-            }
-        }
-        
-        function callNoArgSyn() {
-            alert(bridge.call("testNoArgSyn"));
-        }
-        
-        function callNoArgAsyn() {
-            bridge.call("testNoArgAsyn", function (v) {
-                        alert(v)
-                        });
-        }
-        
-        function callNever() {
-            bridge.call("testNever", {msg: "testSyn"})
-        }
-        
-        
-        function callProgress(){
-            dsBridge.call("callProgress", function (value) {
-                          document.getElementById("progress").innerText=value
-                          })
-        }
-        
-        function test(arg1,arg2){
-            return arg1+arg2;
-        }
-        
-        dsBridge.register('addValue',function(r,l){
-                          return r+l;
-        })
-        
-        </script>
+<script>
+var bridge = DSBridge.getBridge();
+
+// sync handler
+bridge.registerHandler('addValue', function (data) {
+  return data.left + data.right;
+});
+// async handler
+bridge.registerHandler('addValueAsync', function (data, callback) {
+  callback({ result: data.left + data.right });
+});
+
+bridge.init();
+
+function callSync() {
+  alert(bridge.callHandler('testSync', { msg: 'testSync' }));
+}
+
+function callAsync() {
+  bridge.callHandler('testAsync', { msg: 'testAsync' }, function (ret) {
+    if (ret.error) {
+      console.error(ret.error);
+      return;
+    }
+    alert(ret.result);
+  });
+}
+
+function callNoArgSync() {
+  alert(bridge.callHandler('testNoArgSync'));
+}
+
+function callNoArgAsync() {
+  bridge.callHandler('testNoArgAsync', function (ret) {
+    if (ret.error) {
+      console.error(ret.error);
+      return;
+    }
+    alert(ret.result);
+  });
+}
+
+function callNever() {
+  bridge.callHandler('testNever', { msg: 'testNever' });
+}
+
+function callProgress(){
+  bridge.callHandler('callProgress', function (ret) {
+    if (ret.error) {
+      console.error(ret.error);
+      return;
+    }
+    document.getElementById('progress').innerText = ret.result;
+  });
+}
+</script>
     </body>
 </html>

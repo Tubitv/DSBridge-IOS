@@ -14,7 +14,7 @@
     NSString *jsonString = nil;
     NSError *error;
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:&error];
-    if (! jsonData) {
+    if (!jsonData) {
         return @"{}";
     } else {
         jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -26,56 +26,49 @@ UInt64 g_ds_last_call_time = 0;
 NSString *g_ds_js_cache=@"";
 bool g_ds_have_pending=false;
 
-+(NSString *)call:(NSString*) method :(NSString*) args  JavascriptInterfaceObject:(id) JavascriptInterfaceObject jscontext:(id) jscontext
++(NSDictionary *)call:(NSString*) method :(NSString*) args JavascriptInterfaceObject:(id) JavascriptInterfaceObject jscontext:(id) jscontext
 {
     NSString *methodOne = [JSBUtil methodByNameArg:1 selName:method class:[JavascriptInterfaceObject class]];
     NSString *methodTwo = [JSBUtil methodByNameArg:2 selName:method class:[JavascriptInterfaceObject class]];
     SEL sel=NSSelectorFromString(methodOne);
-    SEL selasyn=NSSelectorFromString(methodTwo);
-    NSString *error=[NSString stringWithFormat:@"Error! \n Method %@ is not invoked, since there is not a implementation for it",method];
-    NSString *result=@"";
+    SEL selasync=NSSelectorFromString(methodTwo);
+    NSString *error=[NSString stringWithFormat:@"Error! \n Method %@ is not invoked, since there is not a implementation for it", method];
+    NSDictionary *result;
     if(!JavascriptInterfaceObject){
-        NSLog(@"Js bridge method called, but there is not a JavascriptInterfaceObject, please set JavascriptInterfaceObject first!");
+        NSLog(@"Js bridge method called, but there is no JavascriptInterfaceObject, please set JavascriptInterfaceObject first!");
     }else{
-        NSDictionary * json=[JSBUtil jsonStringToObject:args];
-        NSString * cb;
+        NSMutableDictionary *json=[JSBUtil jsonStringToObject:args];
+        NSString *cb;
         do{
-            if(json && (cb= [json valueForKey:@"_dscbstub"])){
-                if([JavascriptInterfaceObject respondsToSelector:selasyn]){
-                    void (^completionHandler)(NSString *,BOOL) = ^(NSString * value,BOOL complete){
-                        value=[value stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
-                        NSString *del=@"";
-                        if(complete){
-                           del=[@"delete window." stringByAppendingString:cb];
-                        }
-                        NSString*js=[NSString stringWithFormat:@"try {%@(decodeURIComponent(\"%@\"));%@; } catch(e){};",cb,(value == nil) ? @"" : value,del];
-                        if([jscontext isKindOfClass:JSContext.class]){
-                            [jscontext evaluateScript:js ];
-                        }else if([jscontext isKindOfClass:WKWebView.class]){
-                            @synchronized(jscontext)
-                            {
-                                UInt64  t=[[NSDate date] timeIntervalSince1970]*1000;
-                                g_ds_js_cache=[g_ds_js_cache stringByAppendingString:js];
-                                if(t-g_ds_last_call_time<50){
-                                    if(!g_ds_have_pending){
-                                        [self evalJavascript:(WKWebView *)jscontext :50];
-                                        g_ds_have_pending=true;
-                                    }
-                                }else{
-                                    [self evalJavascript:(WKWebView *)jscontext  :0];
+            if(json && (cb=[json valueForKey:@"_callbackId"])){
+                [json removeObjectForKey:@"_callbackId"];
+                if([JavascriptInterfaceObject respondsToSelector:selasync]){
+                    // NOTE `value` should be a dictionary with `result` property if succeed, or `error` property if fail
+                    void (^completionHandler)(NSDictionary *, BOOL) = ^(NSDictionary * value, BOOL complete){
+                        NSString *js=[NSString stringWithFormat:@"%@.invokeCallback && %@.invokeCallback(%@, %@, %@)", BRIDGE_NAME, BRIDGE_NAME, cb, [JSBUtil objToJsonString:value], complete ? @"true" : @"false"];
+                        NSLog(@"call js: %@", js);
+                        @synchronized(jscontext)
+                        {
+                            UInt64 t=[[NSDate date] timeIntervalSince1970]*1000;
+                            g_ds_js_cache=[g_ds_js_cache stringByAppendingString:js];
+                            if(t-g_ds_last_call_time<50){
+                                if(!g_ds_have_pending){
+                                    [self evalJavascript:(WKWebView *)jscontext :50];
+                                    g_ds_have_pending=true;
                                 }
+                            }else{
+                                [self evalJavascript:(WKWebView *)jscontext  :0];
                             }
                         }
                     };
                     SuppressPerformSelectorLeakWarning(
-                                                       [JavascriptInterfaceObject performSelector:selasyn withObject:json withObject:completionHandler];
-                                                       
+                                                       [JavascriptInterfaceObject performSelector:selasync withObject:json withObject:completionHandler];
                                                        );
                     //when performSelector is performing a selector that return value type is void,
                     //the return value of performSelector always seem to be the first argument of the selector in real device(simulator is nil).
                     //So,you should declare the return type of all api as NSString explicitly.
                     if(result==(id)json){
-                        result=@"";
+                        result=@{};
                     }
                     
                     break;
@@ -87,18 +80,15 @@ bool g_ds_have_pending=false;
                 break;
             }
             NSString*js=[error stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
-            js=[NSString stringWithFormat:@"window.alert(decodeURIComponent(\"%@\"));",js];
-            if([jscontext isKindOfClass:JSContext.class]){
-                [jscontext evaluateScript:js ];
-            }else if([jscontext isKindOfClass:WKWebView.class]){
-                [(WKWebView *)jscontext evaluateJavaScript :js completionHandler:nil];
-            }
-            NSLog(@"%@",error);
+            js=[NSString stringWithFormat:@"window.alert(decodeURIComponent(\"%@\"));", js];
+            [(WKWebView *)jscontext evaluateJavaScript:js completionHandler:nil];
+            NSLog(@"error %@", error);
         }while (0);
     }
-    if(result == nil||![result isKindOfClass:[NSString class]]){
-        result=@"";
+    if(result == nil||![result isKindOfClass:[NSDictionary class]]){
+        result=@{};
     }
+    NSLog(@"JSBUtil call result %@", result);
     return result;
 }
 
@@ -108,7 +98,7 @@ bool g_ds_have_pending=false;
     NSMutableArray *arr = [NSMutableArray array];
     u_int count;
     Method *methods = class_copyMethodList(class, &count);
-    for (int i =0; i<count; i++) {
+    for (int i=0; i<count; i++) {
         SEL name1 = method_getName(methods[i]);
         const char *selName= sel_getName(name1);
         NSString *strName = [NSString stringWithCString:selName encoding:NSUTF8StringEncoding];
@@ -136,7 +126,7 @@ bool g_ds_have_pending=false;
 }
 
 
-+ (void) evalJavascript:(WKWebView *)jscontext :(int) delay{
++ (void)evalJavascript:(WKWebView *)jscontext :(int) delay{
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
         //NSLog(@"\%@\n",g_ds_js_cache);
         @synchronized(jscontext){
@@ -151,20 +141,19 @@ bool g_ds_have_pending=false;
 }
 
 
-+ (id )jsonStringToObject:(NSString *)jsonString
++ (id)jsonStringToObject:(NSString *)jsonString
 {
-    if (jsonString == nil) {
+    if(jsonString == nil){
         return nil;
     }
     
     NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
     NSError *err;
-    NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:jsonData
+    NSMutableDictionary *dic = [NSJSONSerialization JSONObjectWithData:jsonData
                                                         options:NSJSONReadingMutableContainers
                                                           error:&err];
-    if(err)
-    {
-        NSLog(@"json解析失败：%@",err);
+    if(err){
+        NSLog(@"json decoding fail：%@", err);
         return nil;
     }
     return dic;

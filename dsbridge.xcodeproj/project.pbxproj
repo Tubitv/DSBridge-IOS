@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7C62EA8D201AE33A00025633 /* bridge.js in Resources */ = {isa = PBXBuildFile; fileRef = 7C62EA8C201AE33A00025633 /* bridge.js */; };
 		815FCC931E1CE48F0073CA79 /* JSBUtil.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 818F0BBE1E18C59200679925 /* JSBUtil.h */; };
 		815FCC941E1CE4E70073CA79 /* JSBWebEventDelegate.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 818F0BCE1E1A3EEE00679925 /* JSBWebEventDelegate.h */; };
 		818F0B931E18C08100679925 /* dsbridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 818F0B921E18C08100679925 /* dsbridge.m */; };
@@ -18,10 +19,8 @@
 		818F0BAD1E18C0AA00679925 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 818F0BAC1E18C0AA00679925 /* Assets.xcassets */; };
 		818F0BB01E18C0AA00679925 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 818F0BAE1E18C0AA00679925 /* LaunchScreen.storyboard */; };
 		818F0BB71E18C3B800679925 /* DWKwebview.m in Sources */ = {isa = PBXBuildFile; fileRef = 818F0BB51E18C3B800679925 /* DWKwebview.m */; };
-		818F0BBA1E18C45E00679925 /* DUIwebview.m in Sources */ = {isa = PBXBuildFile; fileRef = 818F0BB91E18C45E00679925 /* DUIwebview.m */; };
 		818F0BBD1E18C58000679925 /* DWebview.m in Sources */ = {isa = PBXBuildFile; fileRef = 818F0BBC1E18C58000679925 /* DWebview.m */; };
 		818F0BC01E18C59200679925 /* JSBUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 818F0BBF1E18C59200679925 /* JSBUtil.m */; };
-		818F0BC21E18D44A00679925 /* DUIwebview.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 818F0BB81E18C45E00679925 /* DUIwebview.h */; };
 		818F0BC31E18D44A00679925 /* DWebview.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 818F0BBB1E18C58000679925 /* DWebview.h */; };
 		818F0BC41E18D44A00679925 /* DWKwebview.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 818F0BB61E18C3B800679925 /* DWKwebview.h */; };
 		818F0BC91E18DD3600679925 /* JsApiTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 818F0BC81E18DD3600679925 /* JsApiTest.m */; };
@@ -50,7 +49,6 @@
 			files = (
 				815FCC941E1CE4E70073CA79 /* JSBWebEventDelegate.h in CopyFiles */,
 				815FCC931E1CE48F0073CA79 /* JSBUtil.h in CopyFiles */,
-				818F0BC21E18D44A00679925 /* DUIwebview.h in CopyFiles */,
 				818F0BC31E18D44A00679925 /* DWebview.h in CopyFiles */,
 				818F0BC41E18D44A00679925 /* DWKwebview.h in CopyFiles */,
 				818F0B941E18C08100679925 /* dsbridge.h in CopyFiles */,
@@ -60,6 +58,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7C62EA8C201AE33A00025633 /* bridge.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = bridge.js; sourceTree = "<group>"; };
 		818F0B8E1E18C08100679925 /* libdsbridge.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libdsbridge.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		818F0B911E18C08100679925 /* dsbridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = dsbridge.h; sourceTree = "<group>"; };
 		818F0B921E18C08100679925 /* dsbridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = dsbridge.m; sourceTree = "<group>"; };
@@ -75,8 +74,6 @@
 		818F0BB11E18C0AA00679925 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		818F0BB51E18C3B800679925 /* DWKwebview.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DWKwebview.m; sourceTree = "<group>"; };
 		818F0BB61E18C3B800679925 /* DWKwebview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DWKwebview.h; sourceTree = "<group>"; };
-		818F0BB81E18C45E00679925 /* DUIwebview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DUIwebview.h; sourceTree = "<group>"; };
-		818F0BB91E18C45E00679925 /* DUIwebview.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DUIwebview.m; sourceTree = "<group>"; };
 		818F0BBB1E18C58000679925 /* DWebview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DWebview.h; sourceTree = "<group>"; };
 		818F0BBC1E18C58000679925 /* DWebview.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DWebview.m; sourceTree = "<group>"; };
 		818F0BBE1E18C59200679925 /* JSBUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSBUtil.h; sourceTree = "<group>"; };
@@ -134,8 +131,6 @@
 		818F0B901E18C08100679925 /* dsbridge */ = {
 			isa = PBXGroup;
 			children = (
-				818F0BB81E18C45E00679925 /* DUIwebview.h */,
-				818F0BB91E18C45E00679925 /* DUIwebview.m */,
 				818F0BBB1E18C58000679925 /* DWebview.h */,
 				818F0BBC1E18C58000679925 /* DWebview.m */,
 				818F0BB61E18C3B800679925 /* DWKwebview.h */,
@@ -152,6 +147,7 @@
 		818F0B9F1E18C0AA00679925 /* dsbridgedemo */ = {
 			isa = PBXGroup;
 			children = (
+				7C62EA8C201AE33A00025633 /* bridge.js */,
 				818F0BA31E18C0AA00679925 /* AppDelegate.h */,
 				818F0BA41E18C0AA00679925 /* AppDelegate.m */,
 				818F0BAC1E18C0AA00679925 /* Assets.xcassets */,
@@ -268,6 +264,7 @@
 			files = (
 				818F0BD01E1A820B00679925 /* test.html in Resources */,
 				818F0BB01E18C0AA00679925 /* LaunchScreen.storyboard in Resources */,
+				7C62EA8D201AE33A00025633 /* bridge.js in Resources */,
 				818F0BAD1E18C0AA00679925 /* Assets.xcassets in Resources */,
 				818F0BAB1E18C0AA00679925 /* Main.storyboard in Resources */,
 			);
@@ -284,7 +281,6 @@
 				818F0BC01E18C59200679925 /* JSBUtil.m in Sources */,
 				818F0BBD1E18C58000679925 /* DWebview.m in Sources */,
 				818F0BB71E18C3B800679925 /* DWKwebview.m in Sources */,
-				818F0BBA1E18C45E00679925 /* DUIwebview.m in Sources */,
 				818F0B931E18C08100679925 /* dsbridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

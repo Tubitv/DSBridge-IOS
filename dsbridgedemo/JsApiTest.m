@@ -10,47 +10,45 @@
 
 @interface JsApiTest(){
   NSTimer * timer ;
-  void(^hanlder)(NSString *s,BOOL isComplete);
+  void(^handler)(NSDictionary *s, BOOL isComplete);
   int value;
 }
 @end
 
 @implementation JsApiTest
-
-- (NSString *) testSyn:(NSDictionary *) args
+- (NSDictionary *) testSync:(NSDictionary *) args
 {
-    return [(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[ syn call]"];
+    return @{ @"result": [(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[sync call]"] };
 }
 
-- (void) testAsyn:(NSDictionary *) args :(void (^)(NSString * _Nullable result,BOOL complete))completionHandler
+- (void) testAsync:(NSDictionary *) args :(void (^)(NSDictionary * _Nullable result, BOOL complete))completionHandler
 {
-    completionHandler([(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[ asyn call]"],YES);
+    completionHandler(@{ @"result": [(NSString *)[args valueForKey:@"msg"] stringByAppendingString:@"[async call]"] }, YES);
 }
 
-- (NSString *)testNoArgSyn:(NSDictionary *) args
+- (NSDictionary *)testNoArgSync:(NSDictionary *) args
 {
-    return  @"testNoArgSyn called [ syn call]";
+    return @{ @"result": @"testNoArgSyn called [sync call]" };
 }
 
-- ( void )testNoArgAsyn:(NSDictionary *) args :(void (^)(NSString * _Nullable result,BOOL complete))completionHandler
+- (void)testNoArgAsync:(NSDictionary *) args :(void (^)(NSDictionary * _Nullable result, BOOL complete))completionHandler
 {
-    completionHandler(@"testNoArgAsyn called [ asyn call]",YES);
+    completionHandler(@{ @"result": @"testNoArgAsync called [async call]" }, YES);
 }
 
-- ( void )callProgress:(NSDictionary *) args :(void (^)(NSString * _Nullable result,BOOL complete))completionHandler
+- (void)callProgress:(NSDictionary *) args :(void (^)(NSDictionary * _Nullable result, BOOL complete))completionHandler
 {
-    value=10;
-    hanlder=completionHandler;
-    timer =  [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(onTimer:) userInfo:nil repeats:YES];
+    value = 10;
+    handler = completionHandler;
+    timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(onTimer:) userInfo:nil repeats:YES];
 }
 
 -(void)onTimer:t{
-    if(value!=-1){
-        hanlder([NSString stringWithFormat:@"%d",value--],NO);
-    }else{
-        hanlder(@"",YES);
+    if (value != -1) {
+        handler(@{ @"result": [NSString stringWithFormat:@"%d", value--] }, NO);
+    } else {
+        handler(@{}, YES);
         [timer invalidate];
     }
 }
-
 @end

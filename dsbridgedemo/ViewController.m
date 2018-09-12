@@ -24,7 +24,7 @@
     webview.JavascriptInterfaceObject=jsApi;
     [self.view addSubview:webview];
     
-    //加载test.html
+    // load test.html
     NSString *path = [[NSBundle mainBundle] bundlePath];
     NSURL *baseURL = [NSURL fileURLWithPath:path];
     NSString * htmlPath = [[NSBundle mainBundle] pathForResource:@"test"
@@ -34,11 +34,17 @@
                                                        error:nil];
     [webview loadHTMLString:htmlContent baseURL:baseURL];
     __weak DWebview * _webview=webview;
-    [webview setJavascriptContextInitedListener:^(){
+    [webview setJavascriptBridgeInitedListener:^(){
         [_webview callHandler:@"addValue"
-                    arguments:[[NSArray alloc] initWithObjects:@1,@"hello", nil]
-            completionHandler:^(NSString * value){
-                NSLog(@"%@",value);
+                    data:@{ @"left": @1, @"right": @"hello" }
+            completionHandler:^(NSDictionary * value){
+                NSLog(@"addValue %@", [value objectForKey:@"result"]);
+            }];
+        
+        [_webview callHandler:@"addValueAsync"
+                    data:@{ @"left": @1, @"right": @"hello" }
+            completionHandler:^(NSDictionary * value){
+                NSLog(@"addValueAsync %@", [value objectForKey:@"result"]);
             }];
     }];
 }
@@ -48,6 +54,4 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
-
 @end
